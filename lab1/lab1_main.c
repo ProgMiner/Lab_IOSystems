@@ -22,8 +22,25 @@ static dev_t dev;
 static struct cdev cdev;
 static struct class * class;
 
+struct list_res {
+    struct list_head list;
+    long result;
+    int error;
+};
+
+static struct list_head head_res;
+
 static struct lab1_history * history;
 static char *info = "Authors:Pupa & Lupa\n";
+
+static int list_length(struct list_head *head_ptr) {
+    int len = 0;
+    struct list_head *ptr;
+    list_for_each(ptr, head_ptr) {
+        len++;
+    }
+    return len;
+}
 
 static ssize_t dev_read(
         struct file * filp,
@@ -31,7 +48,25 @@ static ssize_t dev_read(
         size_t count,
         loff_t * off
 ) {
-    int len = strlen(info);
+    char *buf = kzalloc(sizeof(char) * MAX_NUMBER_LENGTH * list_length(&head_res), GFP_KERNEL);
+
+    struct list_head *ptr;
+    struct list_res *entry;
+    size_t i = 0;
+
+    size_t len = MAX_NUMBER_LENGTH * list_length(&head_res);
+
+    list_for_each(ptr, &head_res) {
+        entry = list_entry(ptr, struct list_res, list);
+        if (entry->error == 0){
+            snprintf(buf + (i * MAX_NUMBER_LENGTH), MAX_NUMBER_LENGTH, "%ld\n", entry->result);
+            printk(KERN_INFO "%s Result %ld: %ld\n", THIS_MODULE->name, i, entry->result);
+        } else if (entry-> error == 1){
+            snprintf(buf + (i * MAX_NUMBER_LENGTH), MAX_NUMBER_LENGTH, "%s\n", "ERR");
+            printk(KERN_INFO "%s Result %ld: %s\n", THIS_MODULE->name, i, "ERR");
+        }
+        i++;
+    }
 
     // TODO remove debug print
     printk(KERN_INFO "Driver: read()\n");
@@ -105,8 +140,6 @@ static int __init ch_drv_init(void) {
         return -1;
     }
 
-    // TODO remove debug print
-    printk(KERN_INFO "alala\n");
     return 0;
 }
 
