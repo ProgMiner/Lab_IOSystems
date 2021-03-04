@@ -18,28 +18,25 @@ static dev_t dev;
 static struct cdev cdev;
 static struct class * class;
 
-static ssize_t dev_read(
-        struct file * f,
-        char __user * ubuf,
-        size_t count,
-        loff_t * off
-) {
-    char* buf = kzalloc(sizeof(char)* MAX_NUMBER_LENGTH, GFP_KERNEL);
-    size_t len = strlen(buf);
+static char *info = "Authors:Pupa & Lupa\n";
 
-    sprintf(buf + MAX_NUMBER_LENGTH, "%d\n", 1);    
+static ssize_t dev_read(struct file * f, char __user * ubuf, size_t count, loff_t * off) {
+    
 
-    if (*off > 0 || count < len)
+    int len = strlen(info);
+    
+
+    if(count < len) return -EINVAL;
+    if (*off != 0)
     {
       return 0;
     }
 
-    if (copy_to_user(ubuf, buf, len) != 0)
+    if (copy_to_user(ubuf, info, len) != 0)
     {
       return -EFAULT;
     }
     
-    kfree(buf);
     *off = len;
     return len;
 }
@@ -89,7 +86,7 @@ static int __init ch_drv_init(void) {
         unregister_chrdev_region(dev, 1);
         return -1;
     }
-
+    printk(KERN_INFO "alala\n");
     return 0;
 }
 
