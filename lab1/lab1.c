@@ -7,48 +7,67 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 
-static dev_t first;
-static struct cdev c_dev;
-static struct class *cl;
+#define DRIVER_NAME "lab1_dev"
+#define CLASS_NAME  "lab1_class"
+#define DEV_NAME    "lab1"
 
-static ssize_t my_read(struct file *f, char __user *buf, size_t len, loff_t *off) {
+static dev_t dev;
+static struct cdev cdev;
+static struct class * class;
+
+static ssize_t dev_read(
+        struct file * f,
+        char __user * buf,
+        size_t len,
+        loff_t * off
+) {
     printk(KERN_INFO "Driver: read()\n");
     return 0;
 }
 
-static ssize_t my_write(struct file *f, const char __user *buf,  size_t len, loff_t *off) {
+static ssize_t dev_write(
+        struct file * f,
+        const char __user * buf,
+        size_t len,
+        loff_t * off
+) {
     printk(KERN_INFO "Driver: write()\n");
     return len;
 }
 
-static struct file_operations mychdev_fops = {
+static struct file_operations dev_fops = {
     .owner = THIS_MODULE,
-    .read = my_read,
-    .write = my_write
+    .read  = dev_read,
+    .write = dev_write
 };
 
 static int __init ch_drv_init(void) {
-    if (alloc_chrdev_region(&first, 0, 1, "ch_dev") < 0) {
+    /* Allocate 1 char device number */
+    if (alloc_chrdev_region(&dev, 0, 1, DRIVER_NAME) < 0) {
         return -1;
     }
 
-    if ((cl = class_create(THIS_MODULE, "chardrv")) == NULL) {
-        unregister_chrdev_region(first, 1);
+    /* Register own devices class */
+    if ((class = class_create(THIS_MODULE, CLASS_NAME)) == NULL) {
+        unregister_chrdev_region(dev, 1);
         return -1;
     }
 
-    if (device_create(cl, NULL, first, NULL, "lab1") == NULL) {
-        class_destroy(cl);
-        unregister_chrdev_region(first, 1);
+    /* Register own device */
+    if (device_create(class, NULL, dev, NULL, DEV_NAME) == NULL) {
+        class_destroy(class);
+        unregister_chrdev_region(dev, 1);
         return -1;
     }
 
-    cdev_init(&c_dev, &mychdev_fops);
+    /* Initialize cdev stucture (char device structure, a part of inode structure) */
+    cdev_init(&cdev, &dev_fops);
 
-    if (cdev_add(&c_dev, first, 1) == -1) {
-        device_destroy(cl, first);
-        class_destroy(cl);
-        unregister_chrdev_region(first, 1);
+    /* Add initialized cdev structure to the kernel for allocated device (1 minor devices) */
+    if (cdev_add(&cdev, dev, 1) == -1) {
+        device_destroy(class, dev);
+        class_destroy(class);
+        unregister_chrdev_region(dev, 1);
         return -1;
     }
 
@@ -56,11 +75,10 @@ static int __init ch_drv_init(void) {
 }
 
 static void __exit ch_drv_exit(void) {
-    cdev_del(&c_dev);
-    device_destroy(cl, first);
-    class_destroy(cl);
-    unregister_chrdev_region(first, 1);
-    printk(KERN_INFO "Bye!!!\n");
+    cdev_del(&cdev);
+    device_destroy(class, dev);
+    class_destroy(class);
+    unregister_chrdev_region(dev, 1);
 }
 
 module_init(ch_drv_init);
