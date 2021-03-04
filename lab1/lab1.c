@@ -7,6 +7,7 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/time.h>
+#include <linux/slab.h>
 
 #define DRIVER_NAME "lab1_dev"
 #define CLASS_NAME  "lab1_class"
@@ -20,16 +21,15 @@ static struct class * class;
 static ssize_t dev_read(
         struct file * f,
         char __user * ubuf,
-        size_t len,
+        size_t count,
         loff_t * off
 ) {
-size_t len = strlen(THIS_MODULE->name);
+    char* buf = kzalloc(sizeof(char)* MAX_NUMBER_LENGTH, GFP_KERNEL);
+    size_t len = strlen(buf);
 
-    char* buf = kmalloc(sizeof(char)* MAX_NUMBER_LENGTH, GFP_KERNEL);
+    sprintf(buf + MAX_NUMBER_LENGTH, "%d\n", 1);    
 
-    sprintf(buf + MAX_NUMBER_LENGTH * i, "%d\n", do_gettimeofday());    
-
-    if (*ppos > 0 || count < len)
+    if (*off > 0 || count < len)
     {
       return 0;
     }
@@ -40,7 +40,7 @@ size_t len = strlen(THIS_MODULE->name);
     }
     
     kfree(buf);
-    *ppos = len;
+    *off = len;
     return len;
 }
 
