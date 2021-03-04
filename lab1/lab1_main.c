@@ -1,4 +1,7 @@
+#include "lab1.h"
+
 #include <linux/module.h>
+#include <linux/uaccess.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
@@ -14,40 +17,53 @@
 #define DEV_NAME    "lab1"
 #define MAX_NUMBER_LENGTH 256
 
+
 static dev_t dev;
 static struct cdev cdev;
 static struct class * class;
 
+static struct lab1_history * history;
 static char *info = "Authors:Pupa & Lupa\n";
 
-static ssize_t dev_read(struct file * f, char __user * ubuf, size_t count, loff_t * off) {
-    
-
+static ssize_t dev_read(
+        struct file * filp,
+        char __user * ubuf,
+        size_t count,
+        loff_t * off
+) {
     int len = strlen(info);
-    
 
-    if(count < len) return -EINVAL;
-    if (*off != 0)
-    {
-      return 0;
+    // TODO remove debug print
+    printk(KERN_INFO "Driver: read()\n");
+
+    if (count < len) {
+        return -EINVAL;
     }
 
-    if (copy_to_user(ubuf, info, len) != 0)
-    {
-      return -EFAULT;
+    if (*off != 0) {
+        return 0;
     }
-    
+
+    if (copy_to_user(ubuf, info, len) != 0) {
+        return -EFAULT;
+    }
+
     *off = len;
     return len;
 }
 
 static ssize_t dev_write(
-        struct file * f,
-        const char __user * buf,
+        struct file * filp,
+        const char __user * ubuf,
         size_t len,
         loff_t * off
 ) {
+    // TODO remove debug print
     printk(KERN_INFO "Driver: write()\n");
+
+    // TODO lock
+    history = lab1_history_new(len, history);
+
     return len;
 }
 
@@ -76,6 +92,8 @@ static int __init ch_drv_init(void) {
         return -1;
     }
 
+    history = NULL;
+
     /* Initialize cdev stucture (char device structure, a part of inode structure) */
     cdev_init(&cdev, &dev_fops);
 
@@ -86,15 +104,26 @@ static int __init ch_drv_init(void) {
         unregister_chrdev_region(dev, 1);
         return -1;
     }
+
+    // TODO remove debug print
     printk(KERN_INFO "alala\n");
     return 0;
 }
 
 static void __exit ch_drv_exit(void) {
+    struct lab1_history * entry;
+
     cdev_del(&cdev);
     device_destroy(class, dev);
     class_destroy(class);
     unregister_chrdev_region(dev, 1);
+
+    // TODO remove debug print
+    for (entry = history; entry; entry = entry->next) {
+        printk(KERN_INFO "lab1 history entry: %lu\n", entry->length);
+    }
+
+    lab1_history_delete(history);
 }
 
 module_init(ch_drv_init);

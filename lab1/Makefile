@@ -1,5 +1,7 @@
 obj-m += lab1.o
 
+lab1-objs := lab1_main.o lab1_history.o
+
 all:
 	make -C /lib/modules/`uname -r`/build M=$(PWD) modules
 
