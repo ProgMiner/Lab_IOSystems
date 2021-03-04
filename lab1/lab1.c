@@ -6,10 +6,12 @@
 #include <linux/fs.h>
 #include <linux/device.h>
 #include <linux/cdev.h>
+#include <linux/time.h>
 
 #define DRIVER_NAME "lab1_dev"
 #define CLASS_NAME  "lab1_class"
 #define DEV_NAME    "lab1"
+#define MAX_NUMBER_LENGTH 256
 
 static dev_t dev;
 static struct cdev cdev;
@@ -17,12 +19,29 @@ static struct class * class;
 
 static ssize_t dev_read(
         struct file * f,
-        char __user * buf,
+        char __user * ubuf,
         size_t len,
         loff_t * off
 ) {
-    printk(KERN_INFO "Driver: read()\n");
-    return 0;
+size_t len = strlen(THIS_MODULE->name);
+
+    char* buf = kmalloc(sizeof(char)* MAX_NUMBER_LENGTH, GFP_KERNEL);
+
+    sprintf(buf + MAX_NUMBER_LENGTH * i, "%d\n", do_gettimeofday());    
+
+    if (*ppos > 0 || count < len)
+    {
+      return 0;
+    }
+
+    if (copy_to_user(ubuf, buf, len) != 0)
+    {
+      return -EFAULT;
+    }
+    
+    kfree(buf);
+    *ppos = len;
+    return len;
 }
 
 static ssize_t dev_write(
