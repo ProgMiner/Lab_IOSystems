@@ -16,8 +16,6 @@
 #define CLASS_NAME  "lab1_class"
 #define DEV_NAME    "lab1"
 
-#define SNPRINTF_BUFFER_LENGTH (256)
-
 
 static dev_t dev;
 static struct cdev cdev;
@@ -31,9 +29,7 @@ static ssize_t dev_read(
         size_t count,
         loff_t * off
 ) {
-    size_t * history_array;
-    size_t history_length;
-    size_t len = 0, sum = 0, i;
+    size_t len;
     char * buf;
 
     if (*off != 0) {
@@ -41,27 +37,7 @@ static ssize_t dev_read(
     }
 
     // TODO lock
-    history_length = lab1_history_to_array(history, &history_array);
-    buf = kmalloc_array(
-            history_length + 1,
-            sizeof(char) * SNPRINTF_BUFFER_LENGTH,
-            GFP_KERNEL
-    );
-
-    for (i = 0; i < history_length; ++i) {
-        sum += history_array[i];
-
-        len += snprintf(
-                buf + len,
-                sizeof(char) * SNPRINTF_BUFFER_LENGTH,
-                "%lu. %lu bytes\n",
-                i + 1,
-                history_array[i]
-        );
-    }
-
-    kfree(history_array);
-    len += snprintf(buf + len, sizeof(char) * SNPRINTF_BUFFER_LENGTH, "Summary: %lu bytes\n", sum);
+    len = lab1_history_print(history, &buf);
 
     if (count < len) {
         kfree(buf);
