@@ -60,7 +60,7 @@ sudo dmesg
 
 ## Примеры использования
 
-
+![test](https://github.com/ProgMiner/io-systems/blob/master/lab1/img/test.jpg?raw=true)
 
 ## Заключение
 
