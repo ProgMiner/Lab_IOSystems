@@ -1,34 +1,53 @@
 #include "lab1.h"
 
+#include <linux/fs.h>
 #include <linux/module.h>
 #include <linux/uaccess.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/kdev_t.h>
-#include <linux/fs.h>
-#include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/time.h>
 #include <linux/slab.h>
+#include <linux/device.h>
+#include <linux/proc_fs.h>
 
-#define DRIVER_NAME "lab1_dev"
-#define CLASS_NAME  "lab1_class"
-#define DEV_NAME    "lab1"
+#define DRIVER_NAME   "lab1_dev"
+#define CLASS_NAME    "lab1_class"
+#define DEV_NAME      "lab1"
+#define PROC_FILENAME "var1"
 
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Eridan Domoratskiy & Eugene Lazurin");
+MODULE_DESCRIPTION("Lab 1 I/O systems");
 
 static dev_t dev;
 static struct cdev cdev;
 static struct class * class;
+static struct proc_dir_entry * proc_entry;
 
 static struct lab1_history * history;
 
-static ssize_t dev_read(
-        struct file * filp,
-        char __user * ubuf,
-        size_t count,
-        loff_t * off
-) {
+static ssize_t dev_read(struct file * filp, char __user * ubuf, size_t count, loff_t * off) {
+    char * buf;
+
+    lab1_history_print(history, &buf);
+    printk(KERN_INFO "lab1:\n%s", buf);
+
+    kfree(buf);
+    return 0;
+}
+
+static ssize_t dev_write(struct file * filp, const char __user * ubuf, size_t len, loff_t * off) {
+    // TODO lock
+    history = lab1_history_new(len, history);
+
+    return len;
+}
+
+static ssize_t proc_read(struct file * filp, char __user * ubuf, size_t count, loff_t * off) {
     size_t len;
     char * buf;
 
@@ -60,25 +79,18 @@ static ssize_t dev_read(
     return len;
 }
 
-static ssize_t dev_write(
-        struct file * filp,
-        const char __user * ubuf,
-        size_t len,
-        loff_t * off
-) {
-    // TODO lock
-    history = lab1_history_new(len, history);
-
-    return len;
-}
-
 static struct file_operations dev_fops = {
     .owner = THIS_MODULE,
     .read  = dev_read,
     .write = dev_write
 };
 
-static int __init ch_drv_init(void) {
+static struct file_operations proc_fops = {
+	.owner = THIS_MODULE,
+	.read = proc_read,
+};
+
+static int __init lab1_init(void) {
     /* Allocate 1 char device number */
     if (alloc_chrdev_region(&dev, 0, 1, DRIVER_NAME) < 0) {
         return -1;
@@ -110,10 +122,12 @@ static int __init ch_drv_init(void) {
         return -1;
     }
 
+    proc_entry = proc_create(PROC_FILENAME, 0444, NULL, &proc_fops);
     return 0;
 }
 
-static void __exit ch_drv_exit(void) {
+static void __exit lab1_exit(void) {
+    proc_remove(proc_entry);
     cdev_del(&cdev);
     device_destroy(class, dev);
     class_destroy(class);
@@ -121,9 +135,5 @@ static void __exit ch_drv_exit(void) {
     lab1_history_delete(history);
 }
 
-module_init(ch_drv_init);
-module_exit(ch_drv_exit);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Eridan Domoratskiy & Eugene Lazurin");
-MODULE_DESCRIPTION("Lab 1 I/O systems");
+module_init(lab1_init);
+module_exit(lab1_exit);
