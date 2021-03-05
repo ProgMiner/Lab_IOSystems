@@ -33,6 +33,7 @@ static struct lab1_history * history;
 static ssize_t dev_read(struct file * filp, char __user * ubuf, size_t count, loff_t * off) {
     char * buf;
 
+    // TODO lock
     lab1_history_print(history, &buf);
     printk(KERN_INFO "lab1:\n%s", buf);
 
@@ -75,7 +76,7 @@ static ssize_t proc_read(struct file * filp, char __user * ubuf, size_t count, l
 
     kfree(buf);
 
-    *off = len;
+    *off += len;
     return len;
 }
 
