@@ -33,7 +33,7 @@ static ssize_t dev_read(
 ) {
     size_t * history_array;
     size_t history_length;
-    size_t len = 0, i;
+    size_t len = 0, sum = 0, i;
     char * buf;
 
     if (*off != 0) {
@@ -43,12 +43,14 @@ static ssize_t dev_read(
     // TODO lock
     history_length = lab1_history_to_array(history, &history_array);
     buf = kmalloc_array(
-            history_length,
+            history_length + 1,
             sizeof(char) * SNPRINTF_BUFFER_LENGTH,
             GFP_KERNEL
     );
 
     for (i = 0; i < history_length; ++i) {
+        sum += history_array[i];
+
         len += snprintf(
                 buf + len,
                 sizeof(char) * SNPRINTF_BUFFER_LENGTH,
@@ -59,6 +61,7 @@ static ssize_t dev_read(
     }
 
     kfree(history_array);
+    len += snprintf(buf + len, sizeof(char) * SNPRINTF_BUFFER_LENGTH, "Summary: %lu bytes\n", sum);
 
     if (count < len) {
         kfree(buf);
