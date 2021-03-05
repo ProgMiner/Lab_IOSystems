@@ -24,3 +24,27 @@ void lab1_history_delete(struct lab1_history * history) {
         kfree(cur);
     }
 }
+
+size_t lab1_history_length(struct lab1_history * history) {
+    size_t length = 0;
+
+    for (; history; history = history->next) {
+        ++length;
+    }
+
+    return length;
+}
+
+size_t lab1_history_to_array(struct lab1_history * history, size_t ** dest) {
+    size_t length = lab1_history_length(history);
+
+    size_t * array = kmalloc(sizeof(size_t) * length, GFP_KERNEL);
+    size_t i;
+
+    for (i = 1; i <= length && history; ++i, history = history->next) {
+        array[length - i] = history->length;
+    }
+
+    *dest = array;
+    return length;
+}

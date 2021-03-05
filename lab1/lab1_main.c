@@ -15,32 +15,15 @@
 #define DRIVER_NAME "lab1_dev"
 #define CLASS_NAME  "lab1_class"
 #define DEV_NAME    "lab1"
-#define MAX_NUMBER_LENGTH 256
+
+#define SNPRINTF_BUFFER_LENGTH (256)
 
 
 static dev_t dev;
 static struct cdev cdev;
 static struct class * class;
 
-struct list_res {
-    struct list_head list;
-    long result;
-    int error;
-};
-
-static struct list_head head_res;
-
 static struct lab1_history * history;
-static char *info = "Authors:Pupa & Lupa\n";
-
-static int list_length(struct list_head *head_ptr) {
-    int len = 0;
-    struct list_head *ptr;
-    list_for_each(ptr, head_ptr) {
-        len++;
-    }
-    return len;
-}
 
 static ssize_t dev_read(
         struct file * filp,
@@ -48,40 +31,51 @@ static ssize_t dev_read(
         size_t count,
         loff_t * off
 ) {
-    char *buf = kzalloc(sizeof(char) * MAX_NUMBER_LENGTH * list_length(&head_res), GFP_KERNEL);
-
-    struct list_head *ptr;
-    struct list_res *entry;
-    size_t i = 0;
-
-    size_t len = MAX_NUMBER_LENGTH * list_length(&head_res);
-
-    list_for_each(ptr, &head_res) {
-        entry = list_entry(ptr, struct list_res, list);
-        if (entry->error == 0){
-            snprintf(buf + (i * MAX_NUMBER_LENGTH), MAX_NUMBER_LENGTH, "%ld\n", entry->result);
-            printk(KERN_INFO "%s Result %ld: %ld\n", THIS_MODULE->name, i, entry->result);
-        } else if (entry-> error == 1){
-            snprintf(buf + (i * MAX_NUMBER_LENGTH), MAX_NUMBER_LENGTH, "%s\n", "ERR");
-            printk(KERN_INFO "%s Result %ld: %s\n", THIS_MODULE->name, i, "ERR");
-        }
-        i++;
-    }
-
-    // TODO remove debug print
-    printk(KERN_INFO "Driver: read()\n");
-
-    if (count < len) {
-        return -EINVAL;
-    }
+    size_t * history_array;
+    size_t history_length;
+    size_t len = 0, i;
+    char * buf;
 
     if (*off != 0) {
         return 0;
     }
 
-    if (copy_to_user(ubuf, info, len) != 0) {
+    // TODO lock
+    history_length = lab1_history_to_array(history, &history_array);
+    buf = kmalloc_array(
+            history_length,
+            sizeof(char) * SNPRINTF_BUFFER_LENGTH,
+            GFP_KERNEL
+    );
+
+    for (i = 0; i < history_length; ++i) {
+        len += snprintf(
+                buf + len,
+                sizeof(char) * SNPRINTF_BUFFER_LENGTH,
+                "%lu. %lu bytes\n",
+                i + 1,
+                history_array[i]
+        );
+    }
+
+    kfree(history_array);
+
+    if (count < len) {
+        kfree(buf);
+        return -EINVAL;
+    }
+
+    if (len == 0) {
+        kfree(buf);
+        return 0;
+    }
+
+    if (copy_to_user(ubuf, buf, count) != 0) {
+        kfree(buf);
         return -EFAULT;
     }
+
+    kfree(buf);
 
     *off = len;
     return len;
@@ -93,9 +87,6 @@ static ssize_t dev_write(
         size_t len,
         loff_t * off
 ) {
-    // TODO remove debug print
-    printk(KERN_INFO "Driver: write()\n");
-
     // TODO lock
     history = lab1_history_new(len, history);
 
@@ -144,18 +135,10 @@ static int __init ch_drv_init(void) {
 }
 
 static void __exit ch_drv_exit(void) {
-    struct lab1_history * entry;
-
     cdev_del(&cdev);
     device_destroy(class, dev);
     class_destroy(class);
     unregister_chrdev_region(dev, 1);
-
-    // TODO remove debug print
-    for (entry = history; entry; entry = entry->next) {
-        printk(KERN_INFO "lab1 history entry: %lu\n", entry->length);
-    }
-
     lab1_history_delete(history);
 }
 
