@@ -58,10 +58,8 @@ static ssize_t proc_read(struct file * filp, char __user * ubuf, size_t count, l
 
     // TODO lock
     len = lab1_history_print(history, &buf);
-
     if (count < len) {
-        kfree(buf);
-        return -EINVAL;
+        len = count;
     }
 
     if (len == 0) {
@@ -69,13 +67,12 @@ static ssize_t proc_read(struct file * filp, char __user * ubuf, size_t count, l
         return 0;
     }
 
-    if (copy_to_user(ubuf, buf, count) != 0) {
+    if (copy_to_user(ubuf, buf, len) != 0) {
         kfree(buf);
         return -EFAULT;
     }
 
     kfree(buf);
-
     *off += len;
     return len;
 }
