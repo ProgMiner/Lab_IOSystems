@@ -60,25 +60,25 @@ static PartTable def_part_table =
         {
                 {
                         boot_type: 0x00,
-                        start_sec: 0x00,
+                        start_sec: 0x2,
                         start_head: 0x0,
                         start_cyl: 0x0,
                         part_type: 0x83,                /* primary part */
-                        end_head: 0x0,
-                        end_sec: 0x00,
-                        end_cyl: 0x00,
+                        end_head: 0x3,
+                        end_sec: 0x20,
+                        end_cyl: 0x9F,
                         abs_start_sec: 0x1,
                         sec_in_part: 0x4FFF             /* 10 mb */
                 },
                 {
                         boot_type: 0x00,
-                        start_head: 0x00,
+                        start_head: 0x4,
                         start_sec: 0x00,
                         start_cyl: 0x00,
                         part_type: 0x00,                /* extended part */
                         end_sec: 0x00,
-                        end_head: 0x00,
-                        end_cyl: 0x00,
+                        end_head: 0xB,
+                        end_cyl: 0x9F,
                         abs_start_sec: 0x5000,
                         sec_in_part: 0x14000            /* 40 mb */
                 }
@@ -90,24 +90,24 @@ static const PartTable def_log_part_table[] =
                 {
                         {
                                 boot_type: 0x00,
-                                start_head: 0x00,
-                                start_sec: 0x00,
+                                start_head: 0x4,
+                                start_sec: 0x02,
                                 start_cyl: 0x00,
                                 part_type: 0x83,
-                                end_head: 0x00,
-                                end_sec: 0x00,
-                                end_cyl: 0x00,
+                                end_head: 0x7,
+                                end_sec: 0x20,
+                                end_cyl: 0x9f,
                                 abs_start_sec: 0x1,
                                 sec_in_part: 0x9FFF         /* 20 mb */
                         },
                         {
                                 boot_type: 0x00,
-                                start_head: 0x00,
-                                start_sec: 0x00,
+                                start_head: 0x8,
+                                start_sec: 0x01,
                                 start_cyl: 0x00,
                                 part_type: 0x05,
-                                end_head: 0x00,
-                                end_sec: 0x00,
+                                end_head: 0xB,
+                                end_sec: 0x20,
                                 end_cyl: 0x00,
                                 abs_start_sec: 0xa000,
                                 sec_in_part: 0x9FFF         /* 20 mb */
@@ -116,13 +116,13 @@ static const PartTable def_log_part_table[] =
                 {
                         {
                                 boot_type: 0x00,
-                                start_head: 0x00,
-                                start_sec: 0x00,
+                                start_head: 0x8,
+                                start_sec: 0x02,
                                 start_cyl: 0x00,
                                 part_type: 0x83,
-                                end_head: 0x00,
-                                end_sec: 0x00,
-                                end_cyl: 0x00,
+                                end_head: 0xB,
+                                end_sec: 0x20,
+                                end_cyl: 0x9F,
                                 abs_start_sec: 0x1,
                                 sec_in_part: 0x9FFF         /* 20 mb */
                         }
