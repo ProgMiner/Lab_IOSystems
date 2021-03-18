@@ -83,7 +83,7 @@ static PartTable def_part_table =
                         sec_in_part: 0x14000            /* 40 mb */
                 }
         };
-static unsigned int def_log_part_br_abs_start_sector[] = {0x5000, 0xf000};
+static unsigned int def_log_part_br_abs_start_sector[] = {0x5000, 0x14000};
 
 static const PartTable def_log_part_table[] =
         {
