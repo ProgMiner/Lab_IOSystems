@@ -10,7 +10,7 @@
 #include <linux/string.h>
 
 
-#define MEMSIZE 0xF000 // Size of Ram disk in sectors
+#define MEMSIZE 0x19000 // Size of Ram disk in sectors
 int c = 0; //Variable for Major Number 
 
 #define SECTOR_SIZE 512
