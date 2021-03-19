@@ -11,8 +11,9 @@
 
 
 /* Size of Ram disk in sectors */
-#define MEMSIZE 0x19000
+#define MEMSIZE 0x19003
 
+#define SECTOR_SIZE 512
 #define MBR_SIZE SECTOR_SIZE
 #define MBR_DISK_SIGNATURE_OFFSET 440
 #define MBR_DISK_SIGNATURE_SIZE 4
@@ -40,6 +41,21 @@
 #define BV_OFFSET(bv) ((bv).bv_offset)
 #define BV_LEN(bv) ((bv).bv_len)
 
+#define PART_ENTRY_CSH(__name, __c, __s, __h) \
+        .__name##_head   = __h, \
+        .__name##_sec    = __s, \
+        .__name##_cyl_hi = ((__c) & 0x300), \
+        .__name##_cyl    = ((__c) & 0xFF)
+
+#define PART_ENTRY_CSH_BY_LBA(__name, __lba) \
+        PART_ENTRY_CSH(__name, (__lba) / (256 * 63), ((__lba) % 63) + 1, ((__lba) / 63) % 256)
+
+#define PART_ENTRY_COORDS_BY_LBA(__start, __length) \
+        PART_ENTRY_CSH_BY_LBA(start, __start), \
+        PART_ENTRY_CSH_BY_LBA(end, (__start) + (__length) - 1), \
+        .abs_start_sec = __start, \
+        .sec_in_part = __length
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Eridan Domoratskiy & Eugene Lazurin");
@@ -49,127 +65,121 @@ MODULE_DESCRIPTION("Lab 2 I/O systems");
 struct part_entry {
 
     /* 0x00 - Inactive; 0x80 - Active (Bootable) */
-    unsigned char boot_type;
-    unsigned char start_head;
-    unsigned char start_sec:6;
-    unsigned char start_cyl_hi:2;
-    unsigned char start_cyl;
-    unsigned char part_type;
-    unsigned char end_head;
-    unsigned char end_sec:6;
-    unsigned char end_cyl_hi:2;
-    unsigned char end_cyl;
-    unsigned int abs_start_sec;
-    unsigned int sec_in_part;
-};
+    u8  boot_type;
+
+    /* CHS of part first sector, sectors enumerated from one */
+    u8  start_head;
+    u8  start_sec:6;
+    u8  start_cyl_hi:2;
+    u8  start_cyl;
+
+    /* 0x83 - primary part, 0x05 - extended part */
+    u8  part_type;
+
+    /* CHS of part last sector, sectors enumerated from one */
+    u8  end_head;
+    u8  end_sec:6;
+    u8  end_cyl_hi:2;
+    u8  end_cyl;
+
+    /* LBA of part first sector */
+    /* https://ru.wikipedia.org/wiki/LBA */
+    u32 abs_start_sec;
+
+    /* cound of sectors in part */
+    u32 sec_in_part;
+} __attribute__ ((__packed__));
 
 typedef struct part_entry part_table[4];
 
+/* Variable for Major Number */
+static int c = 0;
+
+/* Disk structure
+ *
+ * All values in count of sectors.
+ *
+ * +-----------------------+-----------------------+--------+--------+
+ * |    Top-level content  |         Content       |  Start | Length |
+ * +-----------------------+-----------------------+--------+--------+
+ * |          MBR          |          MBR          | 0      | 1      |
+ * +-----------------------+-----------------------+--------+--------+
+ * | Privary volume 10 MiB | Privary volume 10 MiB | 1      | 0x5000 |
+ * +-----------------------+-----------------------+--------+--------+
+ * |                       |          EBR 1        | 0x5001 | 1      |
+ * |                       +-----------------------+--------+--------+
+ * |    Extended volume    | Logical volume 20 MiB | 0x5002 | 0xA000 |
+ * |         40 MiB        +-----------------------+--------+--------+
+ * |                       |          EBR 2        | 0xF002 | 1      |
+ * |                       +-----------------------+--------+--------+
+ * |                       | Logical volume 20 MiB | 0xF003 | 0xA000 |
+ * +-----------------------+-----------------------+--------+--------+
+ */
+
+static part_table def_part_table = {
+    {
+        /* not primary */
+        .boot_type = 0,
+
+        /* primary part */
+        .part_type = 0x83,
+
+        /* coords */
+        PART_ENTRY_COORDS_BY_LBA(1, 0x5000)
+    },
+    {
+        /* not primary */
+        .boot_type = 0,
+
+        /* extended part */
+        .part_type = 0x05,
+
+        /* coords */
+        PART_ENTRY_COORDS_BY_LBA(0x5001, 0x14002)
+    }
+};
+
+static unsigned int def_log_part_br_abs_start_sector[] = { 0x5001, 0xF002 };
+
+static const part_table def_log_part_table[] = {
+    {
+        {
+            .boot_type = 0,
+            .part_type = 0,
+
+            /* coords */
+            PART_ENTRY_COORDS_BY_LBA(1, 0xA000)
+        },
+        {
+            .boot_type = 0,
+            .part_type = 0,
+
+            /* coords */
+            PART_ENTRY_COORDS_BY_LBA(0xA001, 0xA001)
+        }
+    },
+    {
+        {
+            .boot_type = 0,
+            .part_type = 0,
+
+            /* coords */
+            PART_ENTRY_COORDS_BY_LBA(1, 0xA000)
+        }
+    }
+};
+
 /* Structure associated with Block device */
-struct mydiskdrive_dev {
+static struct {
     int size;
     u8 * data;
     spinlock_t lock;
     struct request_queue * queue;
     struct gendisk * gd;
-
-};
-
-/* Variable for Major Number */
-int c = 0;
-
-static part_table def_part_table = {
-    {
-        .boot_type = 0x0,
-        .start_sec = 0x2,
-        .start_head = 0x0,
-        .start_cyl = 0x0,
-
-        /* primary part */
-        .part_type = 0x83,
-        .end_head = 0x3,
-        .end_sec = 0x20,
-        .end_cyl = 0x9F,
-        .abs_start_sec = 0x1,
-
-        /* 10 mb */
-        .sec_in_part = 0x4FFF
-    },
-    {
-        .boot_type = 0x0,
-        .start_head = 0x4,
-        .start_sec = 0x0,
-        .start_cyl = 0x0,
-
-        /* extended part */
-        .part_type = 0x0,
-        .end_sec = 0x0,
-        .end_head = 0xB,
-        .end_cyl = 0x9F,
-        .abs_start_sec = 0x5000,
-
-        /* 40 mb */
-        .sec_in_part = 0x14000
-    }
-};
-
-static unsigned int def_log_part_br_abs_start_sector[] = { 0x5000, 0x14000 };
-
-static const part_table def_log_part_table[] = {
-    {
-        {
-            .boot_type = 0x00,
-            .start_head = 0x4,
-            .start_sec = 0x02,
-            .start_cyl = 0x00,
-            .part_type = 0x83,
-            .end_head = 0x7,
-            .end_sec = 0x20,
-            .end_cyl = 0x9f,
-            .abs_start_sec = 0x1,
-
-            /* 20 mb */
-            .sec_in_part = 0x9FFF
-        },
-        {
-            .boot_type = 0x00,
-            .start_head = 0x8,
-            .start_sec = 0x01,
-            .start_cyl = 0x00,
-            .part_type = 0x05,
-            .end_head = 0xB,
-            .end_sec = 0x20,
-            .end_cyl = 0x00,
-            .abs_start_sec = 0xa000,
-
-            /* 20 mb */
-            .sec_in_part = 0x9FFF
-        }
-    },
-    {
-        {
-            .boot_type = 0x00,
-            .start_head = 0x8,
-            .start_sec = 0x02,
-            .start_cyl = 0x00,
-            .part_type = 0x83,
-            .end_head = 0xB,
-            .end_sec = 0x20,
-            .end_cyl = 0x9F,
-            .abs_start_sec = 0x1,
-
-            /* 20 mb */
-            .sec_in_part = 0x9FFF
-        }
-    }
-};
-
-/* Structure associated with Block device */
-struct mydiskdrive_dev device;
-struct mydiskdrive_dev * x;
+} device;
 
 static void copy_mbr(u8 * disk) {
-    memset(disk, 0x0, MBR_SIZE);
+    memset(disk, 0, MBR_SIZE);
 
     *(unsigned long *)(disk + MBR_DISK_SIGNATURE_OFFSET) = 0x36E5756D;
 
@@ -195,7 +205,7 @@ void copy_mbr_n_br(u8 * disk) {
     }
 }
 
-static int my_open(struct block_device * x, fmode_t mode) {
+static int my_open(struct block_device * bdev, fmode_t mode) {
     int ret = 0;
 
     printk(KERN_INFO "mydiskdrive : open \n");
@@ -248,7 +258,7 @@ static int rb_transfer(struct request * req) {
         sectors = BV_LEN(bv) / SECTOR_SIZE;
         printk(
                 KERN_DEBUG
-                "my disk: Start Sector: %llu, Sector Offset: %llu; "
+                "lab2: Start Sector: %llu, Sector Offset: %llu; "
                 "Buffer: %p; Length: %u sectors\n",
                 (unsigned long long) start_sector,
                 (unsigned long long) sector_offset,
@@ -256,8 +266,8 @@ static int rb_transfer(struct request * req) {
                 sectors
         );
 
-        /* Write to the device */
         if (dir == WRITE) {
+            /* Write to the device */
             memcpy(
                     device.data + (start_sector + sector_offset) * SECTOR_SIZE,
                     buffer,
@@ -284,7 +294,7 @@ static int rb_transfer(struct request * req) {
 }
 
 /* request handling function */
-static void dev_request(struct request_queue * q) {
+static void __device_setup_dev_request(struct request_queue * q) {
     struct request * req;
     int error;
 
@@ -300,21 +310,20 @@ static void dev_request(struct request_queue * q) {
 }
 
 void device_setup(void) {
-    mydisk_init();
 
     /* major no. allocation */
-    c = register_blkdev(c, "mydisk");
-    printk(KERN_ALERT "Major Number is : %d", c);
+    c = register_blkdev(c, "lab2");
+    printk(KERN_ALERT "Major Number is %d", c);
 
     /* lock for queue */
     spin_lock_init(&device.lock);
-    device.queue = blk_init_queue(dev_request, &device.lock);
+    device.queue = blk_init_queue(__device_setup_dev_request, &device.lock);
 
     /* gendisk allocation */
     device.gd = alloc_disk(8);
 
     /* major no to gendisk */
-    (device.gd)->major = c;
+    device.gd->major = c;
 
     /* first minor of gendisk */
     device.gd->first_minor = 0;
@@ -324,9 +333,9 @@ void device_setup(void) {
     device.gd->queue = device.queue;
     device.size = mydisk_init();
 
-    printk(KERN_INFO "THIS IS DEVICE SIZE %d", device.size);
+    printk(KERN_INFO "THIS IS DEVICE SIZE: %d", device.size);
 
-    sprintf(device.gd->disk_name, "mydisk");
+    sprintf(device.gd->disk_name, "lab2");
     set_capacity(device.gd, device.size);
     add_disk(device.gd);
 }
@@ -346,7 +355,7 @@ void __exit mydiskdrive_exit(void) {
     del_gendisk(device.gd);
     put_disk(device.gd);
     blk_cleanup_queue(device.queue);
-    unregister_blkdev(c, "mydisk");
+    unregister_blkdev(c, "lab2");
     mydisk_cleanup();
 }
 
