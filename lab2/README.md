@@ -39,7 +39,6 @@ dmesg
 Выполнить команду `fdisk -l`
 
 Ожидаемый результат
-![ожидаемый результат fdisk]()
 ```bash
 Device        Boot    Start     End       Sectors   Size    Id    Type
 /dev/lab2p1           1         20480     20480     10M     83    Linux
