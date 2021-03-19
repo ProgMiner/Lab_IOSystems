@@ -5,17 +5,17 @@ if [ "$(whoami)" != "root" ]; then
   exit $?
 fi
 
-mkfs.vfat /dev/mydisk1
-mkfs.vfat /dev/mydisk5
-mkfs.vfat /dev/mydisk6
+mkfs.vfat /dev/lab2p1
+mkfs.vfat /dev/lab2p5
+mkfs.vfat /dev/lab2p6
 
 mkdir /mnt/disk1
 mkdir /mnt/disk5
 mkdir /mnt/disk6
 
-mount /dev/mydisk1 /mnt/disk1
-mount /dev/mydisk5 /mnt/disk5
-mount /dev/mydisk6 /mnt/disk6
+mount /dev/lab2p1 /mnt/disk1
+mount /dev/lab2p5 /mnt/disk5
+mount /dev/lab2p6 /mnt/disk6
 
 function create_files() {
   dd if=/dev/urandom of=/mnt/disk1/file bs=1M count=5
@@ -45,3 +45,7 @@ create_files
   pv /mnt/disk5/file > /tmp/io/testfile
   pv /mnt/disk6/file > /tmp/io/testfile
 delete_files
+
+umount /dev/lab2p1
+umount /dev/lab2p5
+umount /dev/lab2p6

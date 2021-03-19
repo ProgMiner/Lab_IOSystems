@@ -51,3 +51,35 @@ Device        Boot    Start     End       Sectors   Size    Id    Type
 
 ## Тестирование драйвера замером времени копирования
 
+```bash
+\mkfs.fat 4.1 (2017-01-24)
+mkfs.fat 4.1 (2017-01-24)
+mkfs.fat 4.1 (2017-01-24)
+mount: /mnt/disk1: /dev/lab2p1 already mounted on /mnt/disk1.
+5+0 records in
+5+0 records out
+5242880 bytes (5,2 MB, 5,0 MiB) copied, 0,156763 s, 33,4 MB/s
+5+0 records in
+5+0 records out
+5242880 bytes (5,2 MB, 5,0 MiB) copied, 0,149525 s, 35,1 MB/s
+5+0 records in
+5+0 records out
+5242880 bytes (5,2 MB, 5,0 MiB) copied, 0,151667 s, 34,6 MB/s
+Copying files within virtual disk
+5,00MiB 0:00:00 [ 923MiB/s] [================================>] 100%            
+5,00MiB 0:00:00 [ 807MiB/s] [================================>] 100%            
+5,00MiB 0:00:00 [ 716MiB/s] [================================>] 100%            
+5+0 records in
+5+0 records out
+5242880 bytes (5,2 MB, 5,0 MiB) copied, 0,156289 s, 33,5 MB/s
+5+0 records in
+5+0 records out
+5242880 bytes (5,2 MB, 5,0 MiB) copied, 0,149186 s, 35,1 MB/s
+5+0 records in
+5+0 records out
+5242880 bytes (5,2 MB, 5,0 MiB) copied, 0,14798 s, 35,4 MB/s
+Copying files from virtual file to real disk
+5,00MiB 0:00:00 [1,69GiB/s] [================================>] 100%            
+5,00MiB 0:00:00 [1,56GiB/s] [================================>] 100%            
+5,00MiB 0:00:00 [1,57GiB/s] [================================>] 100%  
+```
