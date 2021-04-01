@@ -216,6 +216,23 @@ static void my_release(struct gendisk * disk, fmode_t mode) {
     printk(KERN_INFO "mydiskdrive : closed \n");
 }
 
+int my_ioctl(struct block_device * dev, fmode_t mode, unsigned int cmd, unsigned long arg) {
+    struct hd_geometry geo;
+    switch (cmd) {
+        case GET_HDDGEO:
+            geo.cylinders = 7;
+            geo.heads = 24;
+            geo.sectors = 23;
+            geo.start = 1;
+            if (_copy_to_user((void __user *) arg, &geo, sizeof(geo))) {
+                return -EFAULT
+            }
+            printk(KERN_INFO "%d\n", geo.start);
+            return 0;
+    }
+    return -ENOTTY;
+}
+
 static struct block_device_operations fops = {
     .owner = THIS_MODULE,
     .open = my_open,
