@@ -71,4 +71,8 @@ ls /proc | grep lab3
 ```bash
 sudo make unload
 ```
-
+```shell
+ping -c 2 -p 486f636875 -s 7 10.0.2.15
+ping -c 2 -p 417262757a -s 6 10.0.2.15
+```
+Проверяем содержимое `/proc/lab3`
