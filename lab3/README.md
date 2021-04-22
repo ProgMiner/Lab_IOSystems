@@ -22,10 +22,21 @@ make
 
 для загрузки модуля выпонлить 
 ```bash
-make load
+sudo make load
 ```
+
+Проверить, всё ли нормально загрузилось 
+```bash
+make watch
+```
+Должно быть что-то вроде этого:
+```bash
+
+```
+
 
 для выгрузки модуля 
 ```bash
-make unload
+sudo make unload
 ```
+
