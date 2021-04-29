@@ -1,20 +1,16 @@
-#include "fcntl.h"
-#include "stdlib.h"
-#include "stdio.h"
-#include "sys/ioctl.h"
-
-struct hd_geometry {
-    unsigned char heads;
-    unsigned char sectors;
-    unsigned char cylinders;
-    unsigned char start;
-};
+#include <linux/hdreg.h>
+#include <sys/ioctl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
 
 #define IOCTL_BASE 'W'
-#define GET_HDDGEO _IOR(IOCTL_BASE, 1, struct hd_geometry);
+#define GET_HDDGEO _IOR(IOCTL_BASE, 1, struct hd_geometry)
+
 
 int main() {
-    int fd = open("/dev/mysdisk1", O_RDWR);
+    int fd = open("/dev/lab2", O_RDWR);
+
     if (fd == -1) {
         fputs("Can't open device\n", stderr);
         exit(EXIT_FAILURE);
@@ -25,6 +21,7 @@ int main() {
         fprintf(stderr, "Can't perform HDDGEO. Error code: %lu\n", geo.start);
         exit(EXIT_FAILURE);
     }
+
     printf("Start: %lu\n", geo.start);
     printf("Heads: %d\n", geo.heads);
     printf("Cylinders: %d\n", geo.cylinders);

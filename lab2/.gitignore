@@ -6,6 +6,7 @@
 .*.*.cmd
 Module.symvers
 modules.order
+.cache.mk
 *.o.d
 
 .*.sw?

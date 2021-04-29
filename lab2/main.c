@@ -8,6 +8,7 @@
 #include <linux/blkdev.h>
 #include <linux/bio.h>
 #include <linux/string.h>
+#include <linux/hdreg.h>
 
 
 /* Size of Ram disk in sectors */
@@ -55,6 +56,9 @@
         PART_ENTRY_CSH_BY_LBA(end, (__start) + (__length) - 1), \
         .abs_start_sec = __start, \
         .sec_in_part = __length
+
+#define IOCTL_BASE 'W'
+#define GET_HDDGEO _IOR(IOCTL_BASE, 1, struct hd_geometry)
 
 
 MODULE_LICENSE("GPL");
@@ -216,20 +220,24 @@ static void my_release(struct gendisk * disk, fmode_t mode) {
     printk(KERN_INFO "mydiskdrive : closed \n");
 }
 
-int my_ioctl(struct block_device * dev, fmode_t mode, unsigned int cmd, unsigned long arg) {
+static int my_ioctl(struct block_device * dev, fmode_t mode, unsigned int cmd, unsigned long arg) {
     struct hd_geometry geo;
+
     switch (cmd) {
         case GET_HDDGEO:
             geo.cylinders = 7;
             geo.heads = 24;
             geo.sectors = 23;
             geo.start = 1;
+
             if (_copy_to_user((void __user *) arg, &geo, sizeof(geo))) {
-                return -EFAULT
+                return -EFAULT;
             }
-            printk(KERN_INFO "%d\n", geo.start);
+
+            printk(KERN_INFO "%ld\n", geo.start);
             return 0;
     }
+
     return -ENOTTY;
 }
 
@@ -237,6 +245,7 @@ static struct block_device_operations fops = {
     .owner = THIS_MODULE,
     .open = my_open,
     .release = my_release,
+    .ioctl = my_ioctl,
 };
 
 int mydisk_init(void) {
