@@ -12,7 +12,7 @@
 
 
 /* Size of Ram disk in sectors */
-#define MEMSIZE 0x19003
+#define MEMSIZE 0x1B000
 
 #define SECTOR_SIZE 512
 #define MBR_SIZE SECTOR_SIZE
@@ -103,21 +103,21 @@ static int c = 0;
  *
  * All values in count of sectors.
  *
- * +-----------------------+-----------------------+--------+--------+
- * |    Top-level content  |         Content       |  Start | Length |
- * +-----------------------+-----------------------+--------+--------+
- * |          MBR          |          MBR          | 0      | 1      |
- * +-----------------------+-----------------------+--------+--------+
- * | Privary volume 10 MiB | Privary volume 10 MiB | 1      | 0x5000 |
- * +-----------------------+-----------------------+--------+--------+
- * |                       |          EBR 1        | 0x5001 | 1      |
- * |                       +-----------------------+--------+--------+
- * |    Extended volume    | Logical volume 20 MiB | 0x5002 | 0xA000 |
- * |         40 MiB        +-----------------------+--------+--------+
- * |                       |          EBR 2        | 0xF002 | 1      |
- * |                       +-----------------------+--------+--------+
- * |                       | Logical volume 20 MiB | 0xF003 | 0xA000 |
- * +-----------------------+-----------------------+--------+--------+
+ * +-----------------------+-----------------------+---------+--------+
+ * |    Top-level content  |         Content       |  Start  | Length |
+ * +-----------------------+-----------------------+---------+--------+
+ * |          MBR          |          MBR          | 0       | 1      |
+ * +-----------------------+-----------------------+---------+--------+
+ * | Privary volume 10 MiB | Privary volume 10 MiB | 0x800   | 0x5000 |
+ * +-----------------------+-----------------------+---------+--------+
+ * |                       |          EBR 1        | 0x5800  | 1      |
+ * |                       +-----------------------+---------+--------+
+ * |    Extended volume    | Logical volume 20 MiB | 0x6000  | 0xA000 |
+ * |         40 MiB        +-----------------------+---------+--------+
+ * |                       |          EBR 2        | 0x10000 | 1      |
+ * |                       +-----------------------+---------+--------+
+ * |                       | Logical volume 20 MiB | 0x10800 | 0xA000 |
+ * +-----------------------+-----------------------+---------+--------+
  */
 
 static part_table def_part_table = {
@@ -129,7 +129,7 @@ static part_table def_part_table = {
         .part_type = 0x83,
 
         /* coords */
-        PART_ENTRY_COORDS_BY_LBA(1, 0x5000)
+        PART_ENTRY_COORDS_BY_LBA(0x800, 0x5000)
     },
     {
         /* not primary */
@@ -139,36 +139,36 @@ static part_table def_part_table = {
         .part_type = 0x05,
 
         /* coords */
-        PART_ENTRY_COORDS_BY_LBA(0x5001, 0x14002)
+        PART_ENTRY_COORDS_BY_LBA(0x5800, 0x15800)
     }
 };
 
-static unsigned int def_log_part_br_abs_start_sector[] = { 0x5001, 0xF002 };
+static unsigned int def_log_part_br_abs_start_sector[] = { 0x5800, 0x10000 };
 
 static const part_table def_log_part_table[] = {
     {
         {
             .boot_type = 0,
-            .part_type = 0,
+            .part_type = 0x83,
 
             /* coords */
-            PART_ENTRY_COORDS_BY_LBA(1, 0xA000)
+            PART_ENTRY_COORDS_BY_LBA(0x800, 0xA000)
         },
         {
             .boot_type = 0,
-            .part_type = 0,
+            .part_type = 0x05,
 
             /* coords */
-            PART_ENTRY_COORDS_BY_LBA(0xA001, 0xA001)
+            PART_ENTRY_COORDS_BY_LBA(0xA800, 0x1800)
         }
     },
     {
         {
             .boot_type = 0,
-            .part_type = 0,
+            .part_type = 0x83,
 
             /* coords */
-            PART_ENTRY_COORDS_BY_LBA(1, 0xA000)
+            PART_ENTRY_COORDS_BY_LBA(0x800, 0xA000)
         }
     }
 };
