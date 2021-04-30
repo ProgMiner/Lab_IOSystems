@@ -225,9 +225,9 @@ static int my_ioctl(struct block_device * dev, fmode_t mode, unsigned int cmd, u
 
     switch (cmd) {
         case GET_HDDGEO:
-            geo.cylinders = 7;
-            geo.heads = 24;
-            geo.sectors = 23;
+            geo.cylinders = 1;
+            geo.heads = 256;
+            geo.sectors = 63;
             geo.start = 1;
 
             if (_copy_to_user((void __user *) arg, &geo, sizeof(geo))) {
