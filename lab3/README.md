@@ -80,9 +80,34 @@ ping -c 2 -p 417262757a -s 6 10.0.2.15
 #### Проверяем содержимое `/proc/lab3`
 ```shell
 cat /proc/lab3
+```
+
+```shell
+1. 5 bytes:
+Bytes: "hochu"
+Hex: 68 6F 63 68 75
+2. 5 bytes:
+Bytes: "hochu"
+Hex: 68 6F 63 68 75
+3. 5 bytes:
+Bytes: "Arbuz"
+Hex: 41 72 62 75 7A
+4. 5 bytes:
+Bytes: "Arbuz"
+Hex: 41 72 62 75 7A
+Summary: 20 bytes.
+```
 #### Смотрим статистику принятых пакетов
 ```shell
 ip -s link show lab3
-``````
+```
+```shell
+ mode DEFAULT group default qlen 1000
+    link/ether 08:00:27:58:ee:60 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast   
+    184        4        0       0       0       0       
+    TX: bytes  packets  errors  dropped carrier collsns 
+    0          0        0       0       0       0     
+```
 
 
