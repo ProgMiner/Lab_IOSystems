@@ -55,7 +55,7 @@ ip a
        valid_lft 84867sec preferred_lft 84867sec
     inet6 fe80::c166:6131:9254:4736/64 scope link noprefixroute 
        valid_lft forever preferred_lft forever
-3: vni0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 1000
+3: lab3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 1000
     link/ether 08:00:27:58:ee:60 brd ff:ff:ff:ff:ff:ff
 ```
 
@@ -71,8 +71,18 @@ ls /proc | grep lab3
 ```bash
 sudo make unload
 ```
+## Примеры использования
+
 ```shell
 ping -c 2 -p 486f636875 -s 7 10.0.2.15
 ping -c 2 -p 417262757a -s 6 10.0.2.15
 ```
-Проверяем содержимое `/proc/lab3`
+#### Проверяем содержимое `/proc/lab3`
+```shell
+cat /proc/lab3
+#### Смотрим статистику принятых пакетов
+```shell
+ip -s link show lab3
+``````
+
+
