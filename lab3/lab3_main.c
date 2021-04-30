@@ -46,7 +46,7 @@ static int handle_icmp(struct sk_buff * skb) {
 
         struct icmphdr * icmp = (struct icmphdr *) ((u8 *) ip + ip_hdr_len);
 
-        if (icmp->type == /* 0 */ ICMP_ECHO) {
+        if (icmp->type == ICMP_ECHO) {
             u16 off = ip_hdr_len + sizeof(struct icmphdr);
             u16 data_len = ntohs(ip->tot_len) - off;
             u8 * icmp_data = skb->data + off;
