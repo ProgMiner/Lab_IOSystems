@@ -5,12 +5,14 @@
 
 
 struct lab3_history {
+    char * iface;
     char * content;
     size_t content_length;
     struct lab3_history * next;
 };
 
 struct lab3_history * lab3_history_new(
+        const char * iface,
         const char * content,
         size_t content_length,
         struct lab3_history * next

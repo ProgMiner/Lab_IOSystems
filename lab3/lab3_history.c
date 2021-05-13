@@ -6,13 +6,20 @@
 
 
 struct lab3_history * lab3_history_new(
+        const char * iface,
         const char * content,
         size_t content_length,
         struct lab3_history * next
 ) {
     struct lab3_history * new = kmalloc(sizeof(struct lab3_history), GFP_KERNEL);
 
+    size_t iface_length = strlen(iface);
+    char * iface_copy = kmalloc(sizeof(char) * (iface_length + 1), GFP_KERNEL);
     char * content_copy = kmalloc(sizeof(char) * content_length, GFP_KERNEL);
+
+    strncpy(iface_copy, iface, iface_length + 1);
+    new->iface = iface_copy;
+
     memcpy(content_copy, content, content_length);
     new->content = content_copy;
 
@@ -27,6 +34,7 @@ void lab3_history_delete(struct lab3_history * history) {
     while (next) {
         cur = next;
         next = cur->next;
+        kfree(cur->iface);
         kfree(cur->content);
         kfree(cur);
     }
@@ -112,8 +120,9 @@ size_t lab3_history_print(struct lab3_history * history, char ** dest) {
         len += snprintf(
                 buf + len,
                 sizeof(char) * SNPRINTF_BUFFER_LENGTH,
-                "%lu. %lu bytes:\nBytes: \"%s\"\nHex: %s\n",
+                "%lu. %s: %lu bytes:\nBytes: \"%s\"\nHex: %s\n",
                 i + 1,
+                history_array[i].iface,
                 history_array[i].content_length,
                 content_buf,
                 content_hex
